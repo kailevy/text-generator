@@ -23,6 +23,7 @@ ap.add_argument('-mode', default='train')
 ap.add_argument('-weights', default='')
 ap.add_argument('-start', default='')
 ap.add_argument('-randgen', default='')
+ap.add_argument('-lossfile', default='')
 args = vars(ap.parse_args())
 
 DATA_DIR = args['data_dir']
@@ -31,6 +32,8 @@ HIDDEN_DIM = args['hidden_dim']
 SEQ_LENGTH = args['seq_length']
 WEIGHTS = args['weights']
 
+len_epochs = args['nb_epoch']
+lossfile = args['lossfile']
 start = args['start']
 randgen = args['randgen']
 
@@ -61,32 +64,25 @@ else:
 
 # Training if there is no trained weights specified
 if args['mode'] == 'train' or WEIGHTS == '':
-  while True:
+  while nb_epoch < len_epochs:
     print('\n\nEpoch: {}\n'.format(nb_epoch))
     model.fit(X, y, batch_size=BATCH_SIZE, verbose=1, nb_epoch=1)
     nb_epoch += 1
     generate_text(model, GENERATE_LENGTH, VOCAB_SIZE, ix_to_char, -1, 0)
     if nb_epoch % 10 == 0:
       model.save_weights('checkpoint_layer_{}_hidden_{}_epoch_{}.hdf5'.format(LAYER_NUM, HIDDEN_DIM, nb_epoch))
-
+elif args['mode'] == 'loss' and not lossfile == '':
+  X_test, y_test = load_test_file(lossfile, char_to_ix, VOCAB_SIZE)
+  print('\nEvaluating loss with the following excerpt:\n')
+  print(open(lossfile, 'r').read())
+  evaluate_loss(model, X_test)
 # Else, loading the trained weights and performing generation only
 elif WEIGHTS == '':
   # Loading the trained weights
   model.load_weights(WEIGHTS)
   generate_text(model, GENERATE_LENGTH, VOCAB_SIZE, ix_to_char, -1, 0)
   print('\n\n')
-# elif not start == '':
-#   if not randgen == '':
-#     print("\n\nGenerating random text with start..\n\n")
-#     start_ix = [char_to_ix[s] for s in start]
-#     generate
-#   else:
-#     print("\n\nGenerating text with start...\n\n")
-#     start_ix = [char_to_ix[s] for s in start]
-#     generate_with_start(model, GENERATE_LENGTH, VOCAB_SIZE, ix_to_char, start_ix)
-# elif not randgen == '':
-#   print("\n\nGenerating random text..\n\n")
-#   generate_random(model, GENERATE_LENGTH, VOCAB_SIZE, ix_to_char)
+  generate_random(model, GENERATE_LENGTH, VOCAB_SIZE, ix_to_char)
 else:
   print("\n\nGenerating trained text...\n\n")
   if not start == '':
