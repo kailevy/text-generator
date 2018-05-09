@@ -60,7 +60,7 @@ def load_data(data_dir, seq_length):
 def load_test_file(data_dir, char_to_ix, VOCAB_SIZE):
     data = open(data_dir, 'r').read()
     
-    X = np.zeros((len(data), 1, VOCAB_SIZE)
+    X = np.zeros((len(data), 1, VOCAB_SIZE))
     y = np.zeros((len(data), 1, VOCAB_SIZE))
     for i in range(0, len(data)):
         X_sequence = data[i:(i+1)]
@@ -74,7 +74,7 @@ def load_test_file(data_dir, char_to_ix, VOCAB_SIZE):
         target_sequence = np.zeros((1, VOCAB_SIZE))
         target_sequence[0][y_sequence_ix[0]] = 1.
         y[i] = target_sequence
-     return X, y
+    return X, y
         
     
 
