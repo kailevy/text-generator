@@ -6,6 +6,7 @@ from keras.layers.recurrent import LSTM, SimpleRNN
 from keras.layers.wrappers import TimeDistributed
 from keras import backend as K
 from keras import losses
+import keras.callbacks
 import pickle
 import tensorflow as tf
 
@@ -126,7 +127,7 @@ def make_lstm_model(VOCAB_SIZE, num_layers, num_hidden, dropout):
     model.compile(loss="categorical_crossentropy", optimizer="rmsprop")
     return model
 
-def run_model(model, X, y, num_epochs=50, batch_size=30):
+def run_model_early_stop(model, X, y, num_epochs=50, batch_size=30):
     early_stop1 = keras.callbacks.EarlyStopping(monitor='val_loss',
                               min_delta=1e-3,
                               patience=2,
