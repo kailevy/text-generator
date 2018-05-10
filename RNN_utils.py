@@ -1,7 +1,12 @@
 from __future__ import print_function
 import numpy as np
+from keras.models import Sequential
+from keras.layers.core import Dense, Activation, Dropout
+from keras.layers.recurrent import LSTM, SimpleRNN
+from keras.layers.wrappers import TimeDistributed
 from keras import backend as K
 from keras import losses
+import pickle
 import tensorflow as tf
 
 fuzz_factor = 1e-7
@@ -81,10 +86,10 @@ def load_test_file(data_dir, char_to_ix, VOCAB_SIZE):
         
     
 
-def evaluate_loss(model, X):
+def evaluate_loss(model, X, y):
     sess = K.get_session()
     preds = model.predict(X, batch_size=30)
-    return tf.reduce_mean(losses.categorical_crossentropy(X, tf.convert_to_tensor(preds))).eval(session=sess)
+    return tf.reduce_mean(losses.categorical_crossentropy(y, tf.convert_to_tensor(preds))).eval(session=sess)
 
 def evaluate_loss_bad(model, excerpt, char_to_ix, vocab_size):
     # something isn't right here..
@@ -110,3 +115,32 @@ def evaluate_loss_bad(model, excerpt, char_to_ix, vocab_size):
         print('Char: ', char, ' Loss: ', loss,'  Loss so far: ', cum_loss/i)
         X[0, i, :][ix] = 1
     return losses
+
+def make_lstm_model(VOCAB_SIZE, num_layers, num_hidden, dropout):
+    model = Sequential()
+    model.add(LSTM(num_hidden, input_shape=(None, VOCAB_SIZE), return_sequences=True, dropout=dropout))
+    for i in range(num_layers - 1):
+        model.add(LSTM(num_hidden, return_sequences=True,dropout=dropout))
+    model.add(TimeDistributed(Dense(VOCAB_SIZE)))
+    model.add(Activation('softmax'))
+    model.compile(loss="categorical_crossentropy", optimizer="rmsprop")
+    return model
+
+def run_model(model, X, y, num_epochs=50, batch_size=30):
+    early_stop1 = keras.callbacks.EarlyStopping(monitor='val_loss',
+                              min_delta=1e-3,
+                              patience=2,
+                              verbose=1, mode='auto')
+    early_stop2 = keras.callbacks.EarlyStopping(monitor='loss',
+                              min_delta=1e-3,
+                              patience=2,
+                              verbose=1, mode='auto')
+    history = model.fit(X, y, batch_size=batch_size, callbacks=[early_stop1, early_stop2], validation_split=0.2, epochs=num_epochs, verbose=1)
+    return model, history.history
+
+def save_model(model, history, num_layers, num_hidden, dropout):
+    string = 'layers_{}_hidden_{}_dropout_{}_epoch_{}'.format(num_layers, num_hidden, int(dropout*10), len(history['loss']))
+    print('saving: ' + string)
+    with open('history_'+string, 'wb') as file_pi:
+        pickle.dump(history, file_pi)
+    model.save_weights('weights_'+string+'.hdf5')

@@ -82,7 +82,6 @@ elif WEIGHTS == '':
   model.load_weights(WEIGHTS)
   generate_text(model, GENERATE_LENGTH, VOCAB_SIZE, ix_to_char, -1, 0)
   print('\n\n')
-  generate_random(model, GENERATE_LENGTH, VOCAB_SIZE, ix_to_char)
 else:
   print("\n\nGenerating trained text...\n\n")
   if not start == '':
